@@ -21,9 +21,10 @@ elseif(WIN32)
 		"${PROJECT_SOURCE_DIR}/angle/lib/x64/libEGL.dll.lib"
 		"${PROJECT_SOURCE_DIR}/angle/lib/x64/libGLESv2.dll.lib"
 	)
+	
 else()
 
-	find_library(OpenGLES REQUIRED)
+	find_package(OpenGLES REQUIRED)
 
 	target_link_libraries(gles INTERFACE
 		${OPENGLES_LIBRARY}
