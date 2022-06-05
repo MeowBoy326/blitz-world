@@ -13,7 +13,7 @@ else
 	echo "Building for Linux..."
 	BUILD_CONFIG="-DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_EXAMPLES=1 -DGLFW_BUILD_TESTS=0 \
 -DGLFW_BUILD_DOCS=0 -DGLFW_INSTALL=0 -G Ninja"
-	BUILD_TARGET=all
+	BUILD_TARGET="--target all"
 fi
 
 
