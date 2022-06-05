@@ -12,6 +12,8 @@ int main() {
 	uint width = 1280;
 	uint height = 720;
 
+	debug() << "### Hello world!";
+
 	auto window = new GLWindow("Skirmish 2022!", width, height);
 
 	window->shouldClose.connect(window, &GLWindow::close);

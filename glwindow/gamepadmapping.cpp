@@ -45,7 +45,7 @@ const GamepadMapping* findGamepadMapping(ushort vendorId, ushort productId) {
 	return &defaultMapping;
 }
 
-float getGamepadInput(const GamepadMapping* gpmapping, uint index, bool isButton, const float* axes, int numAxes, const uchar* buttons,
+float getGamepadInput(const GamepadMapping* gpmapping, uint index, bool isButton, const float* axes, uint numAxes, const uchar* buttons,
 					  uint numButtons, const uchar* hats, uint numHats) {
 
 	uint mapping = gpmapping->mappings[index + (isButton ? 4 : 0)];

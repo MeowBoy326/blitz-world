@@ -53,6 +53,10 @@ GLWindow::GLWindow(CString title, uint width, uint height) {
 		});
 		if (!glfwInit()) panic("GLFWinit() failed");
 
+#ifdef WIN32
+		// Angle is EGL, maybe linux should be too?
+		glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+#endif
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -79,7 +83,7 @@ GLWindow::GLWindow(CString title, uint width, uint height) {
 
 		settings::vsyncEnabled.valueChanged.connect([](bool enabled) { glfwSwapInterval(enabled ? 1 : 0); });
 
-		//	glfwSwapInterval(settings::vsyncEnabled ? 1 : 0);
+		glfwSwapInterval(settings::vsyncEnabled ? 1 : 0);
 	}
 
 	// Init window resize handling

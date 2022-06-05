@@ -28,9 +28,11 @@ add_library(imgui
     "imguiex.h"
 )
 
-add_compile_definitions(IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>)
-add_compile_definitions(IMGUI_IMPL_OPENGL_ES3=1)
+target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>)
+target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_ES3=1)
 
 target_include_directories(imgui PUBLIC
     "${SOURCE_DIR}"
 )
+
+target_link_libraries(imgui PUBLIC glfw gles)

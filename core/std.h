@@ -16,8 +16,13 @@
 #include <utility>
 #include <vector>
 
+#ifdef _MSC_VER
+#pragma warning (disable: 4244)
+#pragma warning (disable: 4267)
+#endif
+
 using uchar = unsigned char;
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) || defined(WIN32)
 using ulong = unsigned long;
 using ushort = unsigned short;
 using uint = unsigned int;

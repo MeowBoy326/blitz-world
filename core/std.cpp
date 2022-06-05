@@ -3,7 +3,9 @@
 #include <fstream>
 #include <sstream>
 
+#ifndef WIN32
 #include <unistd.h>
+#endif
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten.h"
@@ -111,7 +113,11 @@ void fail(CString msg, const char* file, int line) {
 	std::cout << "!!! " << lineInfo << std::endl;
 #endif
 
-	__builtin_trap();
+#ifdef WIN32
+		__debugbreak;
+#else
+		__builtin_trap();
+#endif
 
 	// abort();
 	// exit(0);

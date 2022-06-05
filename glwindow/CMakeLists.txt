@@ -19,10 +19,8 @@ add_library(glwindow
     gamepadmappings.inc
 )
 
-target_link_libraries(glwindow imgui glfw geom core)
+target_link_libraries(glwindow imgui glfw gles geom core)
 
-add_executable(glwindow_tests
-    tests/helloworld.cpp
-)
+add_executable(helloworld tests/helloworld.cpp)
 
-target_link_libraries(glwindow_tests glwindow imgui glfw geom core)
+target_link_libraries(helloworld glwindow)

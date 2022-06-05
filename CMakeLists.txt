@@ -23,9 +23,15 @@ message("Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/CMake)
 
 set(CMAKE_CXX_STANDARD 17)
+    add_compile_options()
 
-add_compile_options(-fno-rtti -fno-exceptions)
-add_link_options(-fno-rtti -fno-exceptions)
+if(WIN32)
+
+    add_compile_options(/GR- /EHs- /EHc- /D_HAS_EXCEPTIONS=0)
+else()
+    add_compile_options(-fno-rtti -fno-exceptions)
+    add_link_options(-fno-rtti -fno-exceptions)
+endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
 #	add_compile_options(-Os)
@@ -37,10 +43,13 @@ endif()
 # Enable sanitizers for debug builds only.
 # Not supported in "RelWithDebInfo" mode as it seems to break the profiler.
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(SANITIZER_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
-    message("SANITIZER_OPTIONS=${SANITIZER_OPTIONS}")
-    add_compile_options(${SANITIZER_OPTIONS})
-    add_link_options(${SANITIZER_OPTIONS})
+    if(WIN32)
+    else()
+        set(SANITIZER_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
+        message("SANITIZER_OPTIONS=${SANITIZER_OPTIONS}")
+        add_compile_options(${SANITIZER_OPTIONS})
+        add_link_options(${SANITIZER_OPTIONS})
+     endif()
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR})
@@ -48,6 +57,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Al-pha-be-tic-ally!
 add_subdirectory(core)
 add_subdirectory(geom)
+add_subdirectory(gles)
 add_subdirectory(glfw)
 add_subdirectory(glwindow)
 add_subdirectory(imgui)
