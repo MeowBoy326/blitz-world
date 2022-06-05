@@ -55,6 +55,7 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR})
 
 # Al-pha-be-tic-ally!
+add_subdirectory(audio)
 add_subdirectory(core)
 add_subdirectory(geom)
 add_subdirectory(gles)
