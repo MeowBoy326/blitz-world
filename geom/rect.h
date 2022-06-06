@@ -2,7 +2,7 @@
 
 #include "vec2.h"
 
-#include <core/core.h>
+#include <core/core.hh>
 #include <limits>
 
 namespace wb {

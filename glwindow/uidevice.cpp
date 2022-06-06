@@ -1,6 +1,6 @@
 #include "uidevice.h"
 
-#include "glwindow.h"
+#include "glwindow.hh"
 
 #include <GLFW/glfw3.h>
 

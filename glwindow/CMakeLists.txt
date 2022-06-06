@@ -10,6 +10,7 @@ add_library(glwindow
 	gamepadmapping.h
     glwindow.cpp
     glwindow.h
+    glwindow.hh
     imguiex.cpp
     imguiex.h
     keyboard.cpp

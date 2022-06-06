@@ -1,7 +1,7 @@
 #ifndef VEC2_H
 #define VEC2_H
 
-#include <core/core.h>
+#include <core/core.hh>
 
 namespace wb {
 

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <core/core.h>
+#include <core/core.hh>
 
 #include "affinemat4.h"
 #include "mat3.h"

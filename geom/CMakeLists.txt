@@ -9,7 +9,7 @@ add_library(geom
         box.cpp
         box.h
         geom.cpp
-		geom.h
+	geom.hh
         line.cpp
         line.h
         mat3.cpp

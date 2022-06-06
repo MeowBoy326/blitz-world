@@ -1,6 +1,6 @@
 #pragma once
 
-#include <geom/geom.h>
+#include <geom/geom.hh>
 
 namespace wb {
 

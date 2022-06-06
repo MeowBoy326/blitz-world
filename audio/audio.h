@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include <core/core.h>
-#include <geom/geom.h>
+#include <core/core.hh>
+#include <geom/geom.hh>
 
 #include <AL/al.h>
 #include <AL/alc.h>

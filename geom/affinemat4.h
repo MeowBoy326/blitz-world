@@ -1,12 +1,12 @@
-﻿#pragma once
-
-#include <core/core.h>
+#pragma once
 
 #include "box.h"
 #include "line.h"
 #include "mat3.h"
 #include "plane.h"
 #include "vec3.h"
+
+#include <core/core.hh>
 
 namespace wb {
 

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "gamepad.h"
 #include "imguiex.h"
-#include "keyboard.h"
 
-#include <geom/geom.h>
+#include <geom/geom.hh>
 #include <imgui/imgui.hh>
 
 // Include the GL headers
@@ -15,6 +13,9 @@
 struct GLFWwindow;
 
 namespace wb {
+
+class Keyboard;
+class Gamepad;
 
 namespace settings {
 extern BoolProperty showDebugLog;

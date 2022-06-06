@@ -1,5 +1,8 @@
 #include "glwindow.h"
 
+#include "gamepad.h"
+#include "keyboard.h"
+
 #ifdef __EMSCRIPTEN__
 
 #include "emscripten.h"

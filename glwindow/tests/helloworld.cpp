@@ -1,5 +1,5 @@
 
-#include "glwindow/glwindow.h"
+#include "glwindow/glwindow.hh"
 
 using namespace wb;
 

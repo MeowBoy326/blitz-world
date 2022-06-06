@@ -1,12 +1,12 @@
 #pragma once
 
-#include "imgui.h"
 #include "ImGuiFileDialog.h"
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include <core/core.h>
-#include <geom/geom.h>
+#include <core/core.hh>
+#include <geom/geom.hh>
 
 namespace ImGuiEx {
 

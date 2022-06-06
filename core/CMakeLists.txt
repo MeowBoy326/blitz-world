@@ -7,7 +7,7 @@ add_library(core
     appevent.cpp
     appevent.h
 	core.cpp
-	core.h
+	core.hh
 	debug.cpp
 	debug.h
     function.cpp
