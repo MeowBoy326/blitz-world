@@ -15,19 +15,22 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
 elseif(WIN32)
 
 	target_include_directories(gles INTERFACE
-		"${PROJECT_SOURCE_DIR}/include"
+		"${PROJECT_SOURCE_DIR}/libangle/include"
 	)
 	target_link_libraries(gles INTERFACE
-		"${PROJECT_SOURCE_DIR}/angle/lib/x64/libEGL.dll.lib"
-		"${PROJECT_SOURCE_DIR}/angle/lib/x64/libGLESv2.dll.lib"
+		"${PROJECT_SOURCE_DIR}/libangle/windows_x64/lib/libEGL.dll.lib"
+		"${PROJECT_SOURCE_DIR}/libangle/windows_x64/lib/libGLESv2.dll.lib"
 	)
 	
 else()
 
 	find_package(OpenGLES REQUIRED)
-
+	
+	target_include_directories(gles INTERFACE
+		"${OPENGLES_INCLUDE_DIR}"
+	)
 	target_link_libraries(gles INTERFACE
-		${OPENGLES_LIBRARY}
+		"${OPENGLES_LIBRARY}"
 		X11
 	)
 endif()

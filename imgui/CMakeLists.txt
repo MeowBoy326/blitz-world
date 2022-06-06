@@ -3,36 +3,36 @@ cmake_minimum_required(VERSION 3.8)
 
 project(imgui)
 
-set(SOURCE_DIR "${PROJECT_SOURCE_DIR}/imgui-checkout")
+set(SOURCE_DIR "${PROJECT_SOURCE_DIR}/libimgui")
 
 add_library(imgui
-    "${SOURCE_DIR}/imgui.cpp"
-    "${SOURCE_DIR}/imgui.h"
-    "${SOURCE_DIR}/imgui_demo.cpp"
-    "${SOURCE_DIR}/imgui_draw.cpp"
-    "${SOURCE_DIR}/imgui_tables.cpp"
-    "${SOURCE_DIR}/imgui_widgets.cpp"
-    "${SOURCE_DIR}/imconfig.h"
-    "${SOURCE_DIR}/imgui_internal.h"
-    "${SOURCE_DIR}/imstb_rectpack.h"
-    "${SOURCE_DIR}/imstb_textedit.h"
-    "${SOURCE_DIR}/backends/imgui_impl_opengl3.cpp"
-    "${SOURCE_DIR}/backends/imgui_impl_opengl3.h"
-    "${SOURCE_DIR}/backends/imgui_impl_glfw.cpp"
-    "${SOURCE_DIR}/backends/imgui_impl_glfw.h"
-    "ImGuiFileDialog-checkout/ImGuiFileDialog.cpp"
-    "ImGuiFileDialog-checkout/ImGuiFileDialog.h"
     "imgui.cpp"
     "imgui.hh"
-    "imguiex.cpp"
-    "imguiex.h"
+    "${SOURCE_DIR}/ImGui/imgui.cpp"
+    "${SOURCE_DIR}/ImGui/imgui.h"
+    "${SOURCE_DIR}/ImGui/imgui_demo.cpp"
+    "${SOURCE_DIR}/ImGui/imgui_draw.cpp"
+    "${SOURCE_DIR}/ImGui/imgui_tables.cpp"
+    "${SOURCE_DIR}/ImGui/imgui_widgets.cpp"
+    "${SOURCE_DIR}/ImGui/imconfig.h"
+    "${SOURCE_DIR}/ImGui/imgui_internal.h"
+    "${SOURCE_DIR}/ImGui/imstb_rectpack.h"
+    "${SOURCE_DIR}/ImGui/imstb_textedit.h"
+    "${SOURCE_DIR}/ImGui/backends/imgui_impl_opengl3.cpp"
+    "${SOURCE_DIR}/ImGui/backends/imgui_impl_opengl3.h"
+    "${SOURCE_DIR}/ImGui/backends/imgui_impl_glfw.cpp"
+    "${SOURCE_DIR}/ImGui/backends/imgui_impl_glfw.h"
+    "${SOURCE_DIR}/ImGuiFileDialog/ImGuiFileDialog.cpp"
+    "${SOURCE_DIR}/ImGuiFileDialog/ImGuiFileDialog.h"
 )
 
 target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>)
 target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_ES3=1)
 
 target_include_directories(imgui PUBLIC
-    "${SOURCE_DIR}"
+    "${SOURCE_DIR}/ImGui"
+    "${SOURCE_DIR}/ImGui/backends"
+    "${SOURCE_DIR}/ImGuiFileDialog"
 )
 
 target_link_libraries(imgui PUBLIC glfw gles)

@@ -1,6 +1,6 @@
 
 CHECKOUT_URL=https://github.com/blitz-research/imgui.git
-CHECKOUT_DIR=$PWD/imgui-checkout
+CHECKOUT_DIR=$PWD/ImGui
 
 if test ! -d $CHECKOUT_DIR ; then
 	echo "Checking out $CHECKOUT_URL to $CHECKOUT_DIR..."
@@ -8,7 +8,7 @@ if test ! -d $CHECKOUT_DIR ; then
 fi
 
 CHECKOUT_URL="https://github.com/blitz-research/ImGuiFileDialog.git -b Lib_Only"
-CHECKOUT_DIR=$PWD/ImGuiFileDialog-checkout
+CHECKOUT_DIR=$PWD/ImGuiFileDialog
 
 if test ! -d $CHECKOUT_DIR ; then
 	echo "Checking out $CHECKOUT_URL to $CHECKOUT_DIR..."

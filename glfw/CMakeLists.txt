@@ -5,9 +5,7 @@ cmake_minimum_required(VERSION 3.8)
 project(glfw)
 
 add_library(glfw INTERFACE
-    glfw-checkout/include/GLFW/glfw3.h
-    glfw-checkout/src/internal.h
-    )
+)
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
 
@@ -15,22 +13,25 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
 
     target_link_libraries(glfw INTERFACE gles)
     
+elseif(WIN32)
+
+	target_include_directories(glfw INTERFACE
+		"${PROJECT_SOURCE_DIR}/libglfw3/include"
+	)
+	target_link_libraries(glfw INTERFACE
+		"${PROJECT_SOURCE_DIR}/libglfw3/windows_x64/lib/glfw3.lib"
+		gles
+	)
+	
 else()
 
-    target_include_directories(glfw INTERFACE
-        "${PROJECT_SOURCE_DIR}/glfw-checkout/include"
-    )
+	find_package(glfw3 REQUIRED)
 
-    if(WIN32)
-        target_link_libraries(glfw INTERFACE
-            "${PROJECT_SOURCE_DIR}/glfw-build/release/src/Release/glfw3.lib"
-            gles
-        )
-    else()
-        target_link_libraries(glfw INTERFACE
-            "${PROJECT_SOURCE_DIR}/glfw-build/release/src/libglfw3.a"
-            gles
-        )
-    endif()
-
+	target_include_directories(glfw INTERFACE
+		"${GLFW3_INCLUDE_DIR}"
+	)
+	target_link_libraries(glfw INTERFACE
+		"${GLFW3_LIBRARY}"
+		gles
+	)
 endif()
