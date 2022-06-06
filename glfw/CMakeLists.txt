@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 
 ##### glfw #####
 
+# Have to use 'ex' to avoid conflict
 project(glfw)
 
 add_library(glfw INTERFACE
@@ -15,23 +16,24 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
     
 elseif(WIN32)
 
-	target_include_directories(glfw INTERFACE
+    target_include_directories(glfw INTERFACE
 		"${PROJECT_SOURCE_DIR}/libglfw3/include"
 	)
-	target_link_libraries(glfw INTERFACE
+    target_link_libraries(glfw INTERFACE
 		"${PROJECT_SOURCE_DIR}/libglfw3/windows_x64/lib/glfw3.lib"
 		gles
 	)
 	
 else()
 
-	find_package(glfw3 REQUIRED)
+    find_package(GLFW3 REQUIRED)
 
-	target_include_directories(glfw INTERFACE
-		"${GLFW3_INCLUDE_DIR}"
-	)
-	target_link_libraries(glfw INTERFACE
-		"${GLFW3_LIBRARY}"
-		gles
-	)
+    target_include_directories(glfw INTERFACE
+        "${GLFW3_INCLUDE_DIR}"
+    )
+    target_link_libraries(glfw INTERFACE
+        "${GLFW3_LIBRARY}"
+        X11
+    )
+
 endif()

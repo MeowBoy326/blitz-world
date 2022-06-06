@@ -25,12 +25,11 @@ elseif(WIN32)
 else()
 
 	find_package(OpenGLES REQUIRED)
-	
-	target_include_directories(gles INTERFACE
-		"${OPENGLES_INCLUDE_DIR}"
-	)
-	target_link_libraries(gles INTERFACE
-		"${OPENGLES_LIBRARY}"
-		X11
-	)
+    target_include_directories(gles INTERFACE
+        "${OPENGLES_INCLUDE_DIR}"
+    )
+    target_link_libraries(gles INTERFACE
+        "${OPENGLES_LIBRARY}"
+        X11
+    )
 endif()
