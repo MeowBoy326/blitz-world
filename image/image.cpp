@@ -104,11 +104,7 @@ uint bytesPerPixel(PixelFormat format) {
 	case PixelFormat::rgba64f:
 		return 8;
 	}
-}
-
-Image* createImage(uint width, uint height, PixelFormat format) {
-	uint pitch = width * bytesPerPixel(format);
-	uchar* data = (uchar*)malloc(height * pitch);
+	panic("OOPS");
 }
 
 } // namespace wb

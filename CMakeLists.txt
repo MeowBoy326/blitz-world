@@ -1,9 +1,9 @@
 # To configure for WebAssembly in a build subdir:
 #
-# cmake -DCMAKE_TOOLCHAIN_FILE=CMake/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
+# cmake -DCMAKE_TOOLCHAIN_FILE=$EMSCRIPTEN/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_BUILD_TYPE=Release -GNinja ..
 #
-# Note: EMSCRIPTEN env var must be set to eg: $HOME/dev/emsdk/upstream/emscripten for toolchain file to work.
-#
+# Note: Env var EMSCRIPTEN must be set to something like emsdk/upstream/emscripten or root dir of github emscripten checkout.
+
 # To build in build subdir:
 #
 # cmake --build .
@@ -12,49 +12,76 @@ cmake_minimum_required(VERSION 3.8)
 
 project(blitz-world)
 
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-message("Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(DEBUG 1)
+else()
+    set(RELEASE 1)
+endif()
+
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
+    set(EMSCRIPTEN 1)
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
+    set(WINDOWS 1)
+elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    set(LINUX 1)
+#elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+#    set(DARWIN 1)
+else()
+    message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+message("***** Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 
 set(CMAKE_CXX_STANDARD 17)
-    add_compile_options()
 
-if(WIN32)
-
+# Disable exceptions and RTTI
+#
+if(WINDOWS)
     add_compile_options(/GR- /EHs- /EHc- /D_HAS_EXCEPTIONS=0)
 else()
     add_compile_options(-fno-rtti -fno-exceptions)
     add_link_options(-fno-rtti -fno-exceptions)
 endif()
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
-#	add_compile_options(-Os)
-#	add_link_options(-Os)
-    add_compile_options(-g3)
-    add_link_options(-g3)
+# Release optimization level
+#
+if(RELEASE)
+    if(EMSCRIPTEN)
+        add_compile_options(-Os)
+        add_link_options(-Os)
+    elseif(LINUX)
+        add_compile_options(-O3)
+    endif()
 endif()
 
-# Enable sanitizers for debug builds only.
-# Not supported in "RelWithDebInfo" mode as it seems to break the profiler.
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    if(WIN32)
-    else()
-        set(SANITIZER_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
-        message("SANITIZER_OPTIONS=${SANITIZER_OPTIONS}")
-        add_compile_options(${SANITIZER_OPTIONS})
-        add_link_options(${SANITIZER_OPTIONS})
-     endif()
+# Enable sanitizers for linux in debug builds
+#
+if(LINUX AND DEBUG)
+    set(SANITIZER_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
+    add_compile_options(${SANITIZER_OPTIONS})
+    add_link_options(${SANITIZER_OPTIONS})
+    message("SANITIZER_OPTIONS=${SANITIZER_OPTIONS}")
+endif()
+
+# Output html for emscripten builds
+#
+if(EMSCRIPTEN)
+    set(CMAKE_EXECUTABLE_SUFFIX ".html")
+    add_link_options(--shell-file "${CMAKE_SOURCE_DIR}/embuild/index_template.html")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR})
 
-# Al-pha-be-tic-ally!
+# Al-pha-be-tic-ally thanks Ivan!
+#
 add_subdirectory(audio)
 add_subdirectory(core)
 add_subdirectory(geom)

@@ -4,16 +4,16 @@ cmake_minimum_required(VERSION 3.8)
 project(audio)
 
 add_library(audio
-        audio.cpp
-        audio.h
-        dr_wav.h
+    audio.cpp
+    audio.h
+    dr_wav.h
 )
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
+if(EMSCRIPTEN)
 
     target_link_libraries(audio PUBLIC -lopenal)
 
-elseif(WIN32)
+elseif(WINDOWS)
 
 	target_include_directories(audio PUBLIC
 		"${PROJECT_SOURCE_DIR}/libopenal/include"
@@ -22,7 +22,7 @@ elseif(WIN32)
         "${PROJECT_SOURCE_DIR}/libopenal/windows_x64/lib/OpenAL32.lib"
     )
 	
-else()
+elseif(LINUX)
 
 	find_package(OpenAL REQUIRED)
 	
@@ -33,4 +33,5 @@ else()
 		"${OPENAL_LIBRARY}"
 		core
 	)
+
 endif()

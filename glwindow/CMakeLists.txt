@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.8)
 
 project(glwindow)
 
+###### glwindow module #####
+
 add_library(glwindow
 	gamepad.cpp
 	gamepad.h
@@ -21,6 +23,8 @@ add_library(glwindow
 )
 
 target_link_libraries(glwindow imgui glfw gles geom core)
+
+##### tests #####
 
 add_executable(helloworld tests/helloworld.cpp)
 

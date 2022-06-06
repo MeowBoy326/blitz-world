@@ -1,7 +1,9 @@
-﻿
+
 cmake_minimum_required(VERSION 3.8)
 
 project(core)
+
+##### core module #####
 
 add_library(core
     appevent.cpp
@@ -31,10 +33,10 @@ add_library(core
     weakptr.h
 )
 
+##### tests #####
+
 add_executable(core_tests
     tests/signal.cpp
 )
 
 target_link_libraries(core_tests PRIVATE core)
-
-add_test(NAME core_tests COMMAND core_tests)
