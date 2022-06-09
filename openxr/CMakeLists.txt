@@ -17,19 +17,17 @@ elseif(WINDOWS)
 	)
     target_link_libraries(openxr INTERFACE
 		"${PROJECT_SOURCE_DIR}/libopenxr/windows_x64/lib/openxr_loader.lib"
-        opengl
 	)
 	
 else()
 
-    find_package(OPENXR REQUIRED)
+    find_package(OpenXR REQUIRED)
 
     target_include_directories(openxr INTERFACE
-        "${OPENXR_INCLUDE_DIR}"
+        "${OpenXR_INCLUDE_DIR}"
     )
     target_link_libraries(openxr INTERFACE
-        "${OPENXR_LIBRARY}"
-        X11
+        "${OpenXR_LIBRARY}"
     )
 
 endif()

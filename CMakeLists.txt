@@ -33,7 +33,7 @@ elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
 #elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 #    set(DARWIN 1)
 else()
-    message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+    message(FATAL_ERROR "!!! Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 endif()
 
 # Should we use OpenGLES, GLEW or plain OPENGL?
@@ -62,7 +62,7 @@ if(USE_GLEW)
     add_compile_definitions(USE_GLEW=1)
 endif()
 
-message("***** Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} USE_OPENGLES=${USE_OPENGLES}")
+message("### Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} USE_OPENGLES=${USE_OPENGLES}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 
@@ -94,7 +94,7 @@ if(LINUX AND DEBUG)
     set(SANITIZER_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer)
     add_compile_options(${SANITIZER_OPTIONS})
     add_link_options(${SANITIZER_OPTIONS})
-    message("SANITIZER_OPTIONS=${SANITIZER_OPTIONS}")
+    message("### SANITIZER_OPTIONS=${SANITIZER_OPTIONS}")
 endif()
 
 # Output html for emscripten builds
@@ -116,7 +116,4 @@ add_subdirectory(glwindow)
 add_subdirectory(image)
 add_subdirectory(imgui)
 add_subdirectory(opengl)
-
-if(WINDOWS)
-    add_subdirectory(openxr)
-endif()
+add_subdirectory(openxr)

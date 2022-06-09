@@ -1,17 +1,12 @@
 #pragma once
 
 #ifdef USE_OPENGLES
-    #include <GLES3/gl31.h>
+#include <GLES3/gl31.h>
 #else
-    #ifdef WIN32
-        #include <GL/glew.h>
-    #else
-        #include <GL/gl.h>
-    #endif
+#include <GL/glew.h>
 #endif
 
 namespace wb {
-    //  Needs to be a current opengl context when this is called
-    void initOpenGL();
-}
-
+//  Needs to be a current opengl context when this is called
+void initOpenGL();
+} // namespace wb

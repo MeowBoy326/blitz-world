@@ -5,12 +5,12 @@ cmake_minimum_required(VERSION 3.8)
 project(opengl)
 
 if(EMSCRIPTEN AND NOT USE_OPENGLES)
-	message(FATAL_ERROR "Emscripten builds must use OpenGLES")
+    message(FATAL_ERROR "!!! Emscripten builds must use OpenGLES")
 endif()
 
 set(SOURCES opengl.cpp opengl.hh)
 
-if(WINDOWS AND NOT USE_OPENGLES)
+if(NOT USE_OPENGLES)
 	set(SOURCES ${SOURCES} "libglew/src/glew.c")
 endif()
 
@@ -32,16 +32,6 @@ elseif(WINDOWS AND USE_OPENGLES)
 		"${PROJECT_SOURCE_DIR}/libangle/windows_x64/lib/libGLESv2.dll.lib"
 	)
 
-elseif(WINDOWS)
-
-	target_compile_definitions(opengl PUBLIC GLEW_STATIC)
-
-	target_include_directories(opengl PUBLIC
-		"${PROJECT_SOURCE_DIR}/libglew/include"
-	)
-
-	target_link_libraries(opengl PUBLIC opengl32)
-
 elseif(USE_OPENGLES)
 
 	find_package(OpenGLES REQUIRED)
@@ -55,13 +45,18 @@ elseif(USE_OPENGLES)
 
 else()
 
-	find_package(OpenGL REQUIRED)
+    target_compile_definitions(opengl PUBLIC GLEW_STATIC)
 
-	target_include_directories(opengl INTERFACE
-        "${OPENGL_INCLUDE_DIR}"
+    target_include_directories(opengl PUBLIC
+        "${PROJECT_SOURCE_DIR}/libglew/include"
     )
-    target_link_libraries(opengl INTERFACE
-        "${OPENGL_LIBRARY}"
-    )
+
+    if(WINDOWS)
+        target_link_libraries(opengl PUBLIC opengl32)
+    else()
+        set(OpenGL_GL_PREFERENCE GLVND)
+        find_package(OpenGL REQUIRED)
+        target_link_libraries(opengl PUBLIC ${OPENGL_LIBRARIES})
+    endif()
 
 endif()

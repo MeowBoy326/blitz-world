@@ -3,13 +3,9 @@
 namespace wb {
 
 void initOpenGL() {
-#ifdef USE_OPENGLES
-#else
-#ifdef WIN32
-    glewInit();
-#else
-#endif
+#ifndef USE_OPENGLES
+	glewInit();
 #endif
 }
 
-}
+} // namespace wb
