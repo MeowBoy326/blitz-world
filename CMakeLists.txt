@@ -36,7 +36,33 @@ else()
     message(FATAL_ERROR "Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-message("***** Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+# Should we use OpenGLES, GLEW or plain OPENGL?
+#
+if(EMSCRIPTEN)
+    set(USE_OPENGLES 1)
+endif()
+
+if(WINDOWS AND USE_OPENGLES)
+    set(USE_ANGLE 1)
+endif()
+
+if(NOT USE_OPENGLES)
+    set(USE_GLEW 1)
+endif()
+
+if(USE_OPENGLES)
+    add_compile_definitions(USE_OPENGLES=1)
+endif()
+
+if(USE_ANGLE)
+    add_compile_definitions(USE_ANGLE=1)
+endif()
+
+if(USE_GLEW)
+    add_compile_definitions(USE_GLEW=1)
+endif()
+
+message("***** Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} USE_OPENGLES=${USE_OPENGLES}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake ${CMAKE_MODULE_PATH})
 
@@ -45,7 +71,7 @@ set(CMAKE_CXX_STANDARD 17)
 # Disable exceptions and RTTI
 #
 if(WINDOWS)
-    add_compile_options(/GR- /EHs- /EHc- /D_HAS_EXCEPTIONS=0)
+    add_compile_options(/GR- /EHs- /EHc- /MD /D_HAS_EXCEPTIONS=0)
 else()
     add_compile_options(-fno-rtti -fno-exceptions)
     add_link_options(-fno-rtti -fno-exceptions)
@@ -85,8 +111,12 @@ include_directories(${CMAKE_SOURCE_DIR})
 add_subdirectory(audio)
 add_subdirectory(core)
 add_subdirectory(geom)
-add_subdirectory(gles)
 add_subdirectory(glfw)
 add_subdirectory(glwindow)
 add_subdirectory(image)
 add_subdirectory(imgui)
+add_subdirectory(opengl)
+
+if(WINDOWS)
+    add_subdirectory(openxr)
+endif()

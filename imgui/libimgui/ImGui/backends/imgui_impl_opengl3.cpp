@@ -130,7 +130,7 @@
 #else
 #include <GLES3/gl3.h>          // Use GL ES 3
 #endif
-#elif !defined(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
+#elif defined(IMGUI_IMPL_OPENGL_LOADER_CUSTOM)
 // Modern desktop OpenGL doesn't have a standard portable header file to load OpenGL function pointers.
 // Helper libraries are often used for this purpose! Here we are using our own minimal custom loader based on gl3w.
 // In the rest of your app/engine, you can use another loader of your choice (gl3w, glew, glad, glbinding, glext, glLoadGen, etc.).
@@ -138,6 +138,8 @@
 // - You may need to regenerate imgui_impl_opengl3_loader.h to add new symbols. See https://github.com/dearimgui/gl3w_stripped
 // - You can temporarily use an unstripped version. See https://github.com/dearimgui/gl3w_stripped/releases
 // Changes to this backend using new APIs should be accompanied by a regenerated stripped loader version.
+#include IMGUI_IMPL_OPENGL_LOADER_CUSTOM
+#else
 #define IMGL3W_IMPL
 #include "imgui_impl_opengl3_loader.h"
 #endif

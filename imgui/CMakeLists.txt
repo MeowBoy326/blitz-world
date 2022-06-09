@@ -26,8 +26,13 @@ add_library(imgui
     "${SOURCE_DIR}/ImGuiFileDialog/ImGuiFileDialog.h"
 )
 
-target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>)
-target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_ES3=1)
+target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<opengl/opengl.hh>)
+
+if(USE_OPENGLES)
+#   target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>)
+#    target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_LOADER_CUSTOM=<GLFW/glfw3.h>)
+    target_compile_definitions(imgui PUBLIC IMGUI_IMPL_OPENGL_ES3=1)
+endif()
 
 target_include_directories(imgui PUBLIC
     "${SOURCE_DIR}/ImGui"
@@ -35,4 +40,4 @@ target_include_directories(imgui PUBLIC
     "${SOURCE_DIR}/ImGuiFileDialog"
 )
 
-target_link_libraries(imgui PUBLIC glfw gles)
+target_link_libraries(imgui PUBLIC glfw)

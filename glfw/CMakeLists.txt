@@ -7,23 +7,24 @@ project(glfw)
 add_library(glfw INTERFACE
 )
 
+target_compile_definitions(glfw INTERFACE GLFW_INCLUDE_NONE)
+
 if(EMSCRIPTEN)
 
     target_link_options(glfw INTERFACE "SHELL:-s USE_GLFW=3")
 
-    target_link_libraries(glfw INTERFACE gles)
-    
+    target_link_libraries(glfw INTERFACE opengl)
+
 elseif(WINDOWS)
 
     target_include_directories(glfw INTERFACE
-		"${PROJECT_SOURCE_DIR}/libglfw3/include"
+		"${PROJECT_SOURCE_DIR}/libglfw/include"
 	)
     target_link_libraries(glfw INTERFACE
-		"${PROJECT_SOURCE_DIR}/libglfw3/windows_x64/lib/glfw3.lib"
-		gles
+		"${PROJECT_SOURCE_DIR}/libglfw/windows_x64/lib/glfw3.lib"
+		opengl
 	)
-	
-elseif(LINUX)
+else()
 
     find_package(GLFW3 REQUIRED)
 
@@ -32,6 +33,7 @@ elseif(LINUX)
     )
     target_link_libraries(glfw INTERFACE
         "${GLFW3_LIBRARY}"
+		opengl
         X11
     )
 

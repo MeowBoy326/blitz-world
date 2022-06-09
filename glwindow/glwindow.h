@@ -5,10 +5,6 @@
 #include <geom/geom.hh>
 #include <imgui/imgui.hh>
 
-// Include the GL headers
-#define GLFW_INCLUDE_ES31 1
-#define GLFW_INCLUDE_GLEXT 1
-#include <GLFW/glfw3.h>
 
 struct GLFWwindow;
 

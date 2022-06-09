@@ -3,6 +3,9 @@
 #include "gamepad.h"
 #include "keyboard.h"
 
+#include <GLFW/glfw3.h>
+#include <opengl/opengl.hh>
+
 #ifdef __EMSCRIPTEN__
 
 #include "emscripten.h"
@@ -56,21 +59,28 @@ GLWindow::GLWindow(CString title, uint width, uint height) {
 		});
 		if (!glfwInit()) panic("GLFWinit() failed");
 
+#ifdef USE_OPENGLES
 #ifdef WIN32
-		// Angle is EGL, maybe linux should be too?
+		// Angle is EGL so we need this
 		glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
 #endif
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+#else
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+#endif
 
 		GLFWmonitor* monitor = nullptr;
 
 #ifndef __EMSCRIPTEN__
+		// TODO: Get this working...
 		glfwWindowHint(GLFW_SRGB_CAPABLE, 0);
-
 		if (settings::fullScreen) monitor = glfwGetPrimaryMonitor();
-
 		stats::refreshRate = glfwGetVideoMode(glfwGetPrimaryMonitor())->refreshRate;
 #else
 		get_initial_canvas_size(&width, &height);
@@ -83,6 +93,8 @@ GLWindow::GLWindow(CString title, uint width, uint height) {
 		glfwSetWindowUserPointer(m_glfwWindow, this);
 
 		glfwMakeContextCurrent(m_glfwWindow);
+
+		initOpenGL();
 
 		settings::vsyncEnabled.valueChanged.connect([](bool enabled) { glfwSwapInterval(enabled ? 1 : 0); });
 

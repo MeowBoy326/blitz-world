@@ -1,15 +1,18 @@
-CHECKOUT_URL="https://github.com/blitz-research/OpenXR-SDK.git"
 
-CHECKOUT_DIR="$PWD/openxr-checkout"
+CHECKOUT_URL="https://github.com/glfw/glfw.git"
 
-BUILD_DIR="$PWD/openxr-build/release"
+CHECKOUT_DIR="$PWD/glfw-checkout"
 
-if test -n "$WINDIR" ; then
+BUILD_DIR="$PWD/glfw-build/release"
+
+if test -d "$WINDIR" ; then
 	export CMAKE_GENERATOR="Visual Studio 17 2022"
-	BUILD_CONFIG="-DDYNAMIC_LOADER=OFF"
+	BUILD_CONFIG="-DGLFW_BUILD_EXAMPLES=0 -DGLFW_BUILD_TESTS=0 \
+	-DGLFW_BUILD_DOCS=0 -DGLFW_INSTALL=0"
 	BUILD_OPTS="--config Release"
 else
-	BUILD_CONFIG="-DCMAKE_BUILD_TYPE=Release -DDYNAMIC_LOADER=OFF -G Ninja"
+	BUILD_CONFIG="-DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_EXAMPLES=0 -DGLFW_BUILD_TESTS=0 \
+	-DGLFW_BUILD_DOCS=0 -DGLFW_INSTALL=0 -G Ninja"
 	BUILD_OPTS=""
 fi
 
@@ -19,7 +22,7 @@ if test ! -f "$CHECKOUT_DIR/.okay" ; then
 	git clone "$CHECKOUT_URL" "$CHECKOUT_DIR" || exit 1
 	touch "$CHECKOUT_DIR/.okay"
 fi
-
+	
 if test ! -f "$BUILD_DIR/.okay" ; then
 	echo "Generating build dir $BUILD_DIR with ${BUILD_CONFIG}..."
 	rm -rf "$BUILD_DIR"

@@ -2,3 +2,4 @@
 CMakeSettings.json
 out/
 CMakeLists.txt.user
+/embuild/build

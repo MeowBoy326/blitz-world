@@ -1,6 +1,8 @@
 
 #include "glwindow/glwindow.hh"
 
+#include <opengl/opengl.hh>
+
 using namespace wb;
 
 extern "C" const char* __asan_default_options() {

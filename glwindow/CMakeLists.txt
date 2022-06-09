@@ -22,7 +22,7 @@ add_library(glwindow
     gamepadmappings.inc
 )
 
-target_link_libraries(glwindow imgui glfw gles geom core)
+target_link_libraries(glwindow imgui glfw geom core)
 
 ##### tests #####
 
