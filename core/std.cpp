@@ -114,9 +114,9 @@ void fail(CString msg, const char* file, int line) {
 #endif
 
 #ifdef WIN32
-		__debugbreak;
+	__debugbreak();
 #else
-		__builtin_trap();
+	__builtin_trap();
 #endif
 
 	// abort();

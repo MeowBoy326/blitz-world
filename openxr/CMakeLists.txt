@@ -34,12 +34,7 @@ endif()
 
 ##### openxr tests #####
 
-add_executable(compiletest
-	tests/compiletest.cpp
-)
-target_link_libraries(compiletest openxr)
-
-add_executable(createinstance
-	"tests/createinstance.cpp"
-)
-target_link_libraries(createinstance openxr core)
+add_executable(createsession
+	"tests/createsession.cpp"
+ )
+target_link_libraries(createsession openxr glwindow core)

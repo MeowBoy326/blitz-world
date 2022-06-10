@@ -18,48 +18,30 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
 endif()
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(DEBUG 1)
-else()
-    set(RELEASE 1)
-endif()
-
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
     set(EMSCRIPTEN 1)
+    add_compile_definitions(OS_EMSCRIPTEN=1)
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Windows")
     set(WINDOWS 1)
+    add_compile_definitions(OS_WINDOWS=1)
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     set(LINUX 1)
+    add_compile_definitions(OS_LINUX=1)
 #elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
 #    set(DARWIN 1)
 else()
     message(FATAL_ERROR "!!! Unrecognized CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-# Should we use OpenGLES, GLEW or plain OPENGL?
-#
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(DEBUG 1)
+else()
+    set(RELEASE 1)
+endif()
+
 if(EMSCRIPTEN)
     set(USE_OPENGLES 1)
-endif()
-
-if(WINDOWS AND USE_OPENGLES)
-    set(USE_ANGLE 1)
-endif()
-
-if(NOT USE_OPENGLES)
-    set(USE_GLEW 1)
-endif()
-
-if(USE_OPENGLES)
     add_compile_definitions(USE_OPENGLES=1)
-endif()
-
-if(USE_ANGLE)
-    add_compile_definitions(USE_ANGLE=1)
-endif()
-
-if(USE_GLEW)
-    add_compile_definitions(USE_GLEW=1)
 endif()
 
 message("### Configuring cmake for CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME} and CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} USE_OPENGLES=${USE_OPENGLES}")

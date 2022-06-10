@@ -69,6 +69,10 @@ public:
 		return m_gamepads[index];
 	}
 
+	GLFWwindow* glfwWindow()const {
+		return m_glfwWindow;
+	};
+
 	void run(Function<void()> funFunc);
 
 	void close();

@@ -3,7 +3,7 @@
 #include "gamepad.h"
 #include "keyboard.h"
 
-#include <GLFW/glfw3.h>
+#include <glfw/glfw.hh>
 #include <opengl/opengl.hh>
 
 #ifdef __EMSCRIPTEN__
@@ -69,8 +69,8 @@ GLWindow::GLWindow(CString title, uint width, uint height) {
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 #else
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 #endif
@@ -191,6 +191,7 @@ GLWindow::GLWindow(CString title, uint width, uint height) {
 	// Init debug console
 	{
 		auto updateDebugLogFunc = [this](bool show) {
+			return;
 			if (show) {
 				debugOutputFunc = [this](CString str) { m_log.AddLog("%s\n", str.c_str()); };
 			} else {
