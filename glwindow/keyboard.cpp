@@ -1,6 +1,6 @@
 #include "keyboard.h"
 
-#include <GLFW/glfw3.h>
+#include <glfw/glfw.hh>
 
 namespace wb {
 

@@ -1,5 +1,7 @@
+/embuild/build
 .vs
 CMakeSettings.json
 out/
 CMakeLists.txt.user
-/embuild/build
+/.idea/
+/cmake-build-debug/

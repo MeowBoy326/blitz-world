@@ -1,8 +1,6 @@
 #include "uidevice.h"
 
-#include "glwindow.hh"
-
-#include <GLFW/glfw3.h>
+#include <glfw/glfw.hh>
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten/html5.h"

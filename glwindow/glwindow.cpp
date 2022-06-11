@@ -3,8 +3,10 @@
 #include "gamepad.h"
 #include "keyboard.h"
 
-#include <glfw/glfw.hh>
+// Shouldn't have to do this! glfw still including gl.h for some reason
 #include <opengl/opengl.hh>
+
+#include <glfw/glfw.hh>
 
 #ifdef __EMSCRIPTEN__
 
