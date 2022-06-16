@@ -58,12 +58,16 @@ public:
 		return connect<FunTy>(nullptr, fun);
 	}
 
-	bool isConnected(SlotTy* slot) const {
+	bool connected() const {
+		return !m_slots.empty();
+	}
+
+	bool connected(SlotTy* slot) const {
 
 		return std::find(m_slots.begin(), m_slots.end(), slot) != m_slots.end();
 	}
 
-	bool isConnected(Object* context) const {
+	bool connected(Object* context) const {
 
 		auto pred = [context](SlotTy* slot) { return slot && slot->context == context; };
 
@@ -72,7 +76,7 @@ public:
 
 	void disconnect(SlotTy* slot) {
 
-		assert(isConnected(slot));
+		assert(connected(slot));
 
 		auto it = std::find(m_slots.begin(), m_slots.end(), slot);
 		assert(it != m_slots.end());
@@ -83,7 +87,7 @@ public:
 
 	void disconnect(Object* context) {
 
-		assert(isConnected(context));
+		assert(connected(context));
 
 		for (auto it = m_slots.begin(); it != m_slots.end(); ++it) {
 			auto slot = *it;

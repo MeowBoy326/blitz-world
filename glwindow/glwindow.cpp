@@ -3,22 +3,22 @@
 #include "gamepad.h"
 #include "keyboard.h"
 
-// Shouldn't have to do this! glfw still including gl.h for some reason
 #include <opengl/opengl.hh>
-
+// Shouldn't have to force opengl b4 glfw? glfw still including gl.h for some reason?
 #include <glfw/glfw.hh>
 
-#ifdef __EMSCRIPTEN__
+#ifdef OS_EMSCRIPTEN
 
 #include "emscripten.h"
 #include "emscripten/html5.h"
 
-EM_JS(void, get_initial_canvas_size, (uint * width, uint* height), {
+EM_JS(void, get_initial_canvas_size, (uint32_t * width, uint32_t* height), {
 	var canvas = document.getElementById('canvas');
 	var rect = canvas.getBoundingClientRect();
 	HEAP32[width >> 2] = rect.width;
 	HEAP32[height >> 2] = rect.height;
 });
+
 #endif
 
 namespace wb {
@@ -347,7 +347,11 @@ void GLWindow::updateEvents() {
 
 	glfwPollEvents();
 	if (glfwWindowShouldClose(m_glfwWindow)) {
-		shouldClose.emit();
+		if (shouldClose.connected()) {
+			shouldClose.emit();
+		} else {
+			close();
+		}
 		return;
 	}
 

@@ -1,8 +1,14 @@
 #pragma once
 
-#include <core/core.hh>
+#include <geom/geom.hh>
 
 namespace wb {
+
+enum struct BlendMode { disable, alpha, additive, multiply };
+
+enum struct DepthMode { disable, enable, compare };
+
+enum struct CullMode { disable, front, back, all };
 
 enum struct PixelFormat {
 	alpha8,
@@ -31,7 +37,7 @@ enum struct AttribFormat { none, float1, float2, float3, float4, sbyte4, ubyte4,
 using VertexFormat = Vector<AttribFormat>;
 using CVertexFormat = const VertexFormat&;
 
-enum struct IndexFormat { uint16, uint32 };
+enum struct IndexFormat { uint8, uint16, uint32 };
 
 inline uint channelsPerPixel(PixelFormat format) {
 	static constexpr uint r[] = {1, 1, 2, 3, 3, 4, 4, 1, 1, 4};
@@ -70,7 +76,8 @@ inline uint bytesPerVertex(CVertexFormat format) {
 }
 
 inline uint bytesPerIndex(IndexFormat format) {
-	return format == IndexFormat::uint32 ? 4 : 2;
+	static constexpr uint r[] = {1, 2, 4};
+	return r[int(format)];
 }
 
 } // namespace wb

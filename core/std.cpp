@@ -118,13 +118,15 @@ void fail(CString msg, const char* file, int line) {
 #else
 	__builtin_trap();
 #endif
-
-	// abort();
-	// exit(0);
 }
 
 String toUpper(String str) {
 	std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c); });
+	return str;
+}
+
+String toLower(String str) {
+	std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
 	return str;
 }
 

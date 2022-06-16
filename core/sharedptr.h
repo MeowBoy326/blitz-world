@@ -20,57 +20,81 @@ public:
 		release(m_ptr);
 	}
 
-	SharedPtr(SharedTy* ptr) : m_ptr(ptr) {
+	template <class SourceTy> SharedPtr(SourceTy* ptr) : m_ptr(ptr) {
 		retain(m_ptr);
 	}
 
-	SharedPtr(const SharedPtr& sharedPtr) : m_ptr(sharedPtr.m_ptr) {
+	template <class SourceTy> SharedPtr(const SharedPtr<SourceTy>& shared) : m_ptr(shared.m_ptr) {
 		retain(m_ptr);
 	}
 
-	SharedPtr(SharedPtr&& sharedPtr) : m_ptr(sharedPtr.m_ptr) {
-		sharedPtr.m_ptr = nullptr;
+	template <class SourceTy> SharedPtr(SharedPtr<SourceTy>&& shared) noexcept : m_ptr(shared.m_ptr) {
+		shared.m_ptr = nullptr;
 	}
 
-	SharedPtr& operator=(SharedTy* ptr) {
+	template <class SourceTy> SharedPtr& operator=(SourceTy* ptr) {
 		retain(ptr);
 		release(m_ptr);
 		m_ptr = ptr;
 		return *this;
 	}
 
-	SharedPtr& operator=(const SharedPtr& sharedPtr) {
-		retain(sharedPtr.m_ptr);
+	template <class SourceTy> SharedPtr& operator=(const SharedPtr<SourceTy> shared) {
+		retain(shared.m_ptr);
 		release(m_ptr);
-		m_ptr = sharedPtr.m_ptr;
+		m_ptr = shared.m_ptr;
 		return *this;
 	}
 
-	SharedPtr& operator=(SharedPtr&& sharedPtr) {
-		if (m_ptr == sharedPtr.m_ptr) return *this;
+	template <class SourceTy> SharedPtr& operator=(SharedPtr<SourceTy>&& shared) noexcept {
+		if (m_ptr == shared.m_ptr) return *this;
 		release(m_ptr);
-		m_ptr = sharedPtr.m_ptr;
-		sharedPtr.m_ptr = nullptr;
+		m_ptr = shared.m_ptr;
+		shared.m_ptr = nullptr;
 		return *this;
+	}
+
+	template <class SourceTy> bool operator==(SourceTy* ptr) const {
+		return m_ptr == ptr;
+	}
+
+	template <class SourceTy> bool operator==(const SharedPtr& shared) const {
+		return m_ptr == shared.m_ptr;
+	}
+
+	template <class SourceTy> friend bool operator==(SourceTy* ptr, const SharedPtr& shared) {
+		return ptr == shared.m_ptr;
+	}
+
+	template <class SourceTy> bool operator!=(SourceTy* ptr) const {
+		return m_ptr != ptr;
+	}
+
+	template <class SourceTy> bool operator!=(const SharedPtr& shared) const {
+		return m_ptr != shared.m_ptr;
+	}
+
+	template <class SourceTy> friend bool operator!=(SourceTy* ptr, const SharedPtr& shared) {
+		return ptr != shared.m_ptr;
+	}
+
+	template <class SourceTy> bool operator<(SourceTy * ptr) const {
+		return m_ptr < ptr;
+	}
+
+	template <class SourceTy> bool operator<(const SharedPtr& shared) const {
+		return m_ptr < shared.m_ptr;
+	}
+
+	template <class SourceTy> friend bool operator<(SourceTy * ptr, const SharedPtr& shared) {
+		return ptr < shared.m_ptr;
 	}
 
 	explicit operator bool() const {
 		return m_ptr != nullptr;
 	}
 
-	bool operator==(SharedTy* ptr) const {
-		return m_ptr == ptr;
-	}
-
-	bool operator!=(SharedTy* ptr) const {
-		return !operator==(ptr);
-	}
-
-	bool operator<(SharedTy* ptr) const {
-		return m_ptr < ptr;
-	}
-
-	operator SharedTy*() const {
+	explicit operator SharedTy*() const {
 		return m_ptr;
 	}
 
@@ -82,7 +106,7 @@ public:
 		return *m_ptr;
 	}
 
-	SharedTy* get() const {
+	SharedTy* value() const {
 		return m_ptr;
 	}
 
@@ -104,9 +128,5 @@ private:
 		SharedPtrPool::g_instance->m_sharedPtrs.push_back(shared);
 	}
 };
-
-template <class SharedTy> SharedPtr<SharedTy> sharedPtr(SharedTy* ptr) {
-	return ptr;
-}
 
 } // namespace wb

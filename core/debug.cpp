@@ -24,7 +24,7 @@ String debugTimestamp() {
 
 void defaultDebugOutputFunc(CString str) {
 	fflush(stdout);
-	std::puts((debugTimestamp() + " " + str).c_str());
+	std::puts(str.c_str());
 	fflush(stdout);
 }
 

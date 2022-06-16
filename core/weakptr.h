@@ -6,19 +6,21 @@ namespace wb {
 
 template <class ObjectTy> class WeakPtr {
 public:
+	using CWeakPtr = const WeakPtr&;
+
 	WeakPtr() = default;
 
 	~WeakPtr() {
 		release();
 	}
 
-	template <class SourceTy> WeakPtr(SourceTy* ptr) {
+	template <class SourceTy> explicit WeakPtr(SourceTy* ptr) {
 		retain(ptr);
 	}
-	template <class SourceTy> WeakPtr(const WeakPtr<SourceTy>& weakPtr) {
+	template <class SourceTy> explicit WeakPtr(const WeakPtr<SourceTy>& weakPtr) {
 		retain(weakPtr.m_ptr);
 	}
-	template <class SourceTy> WeakPtr(const WeakPtr<SourceTy>&& weakPtr) = delete;
+	template <class SourceTy> WeakPtr(WeakPtr<SourceTy>&& weakPtr) = delete;
 
 	template <class SourceTy> WeakPtr& operator=(SourceTy* ptr) {
 		if (ptr != m_ptr) retain(ptr);
@@ -56,8 +58,7 @@ public:
 		assert(m_ptr);
 		return *m_ptr;
 	}
-
-	operator ObjectTy*() const {
+	explicit operator ObjectTy*() const {
 		return m_ptr;
 	}
 

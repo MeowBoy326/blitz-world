@@ -2,34 +2,13 @@
 
 #include "graphicsdevice.h"
 
-#include <opengl/opengl.hh>
+#include "gltypes.h"
 
 namespace wb {
 
-struct GLAttribPtr {
-	GLint size;
-	GLenum type;
-	GLboolean normalized;
-	GLsizei stride;
-	const void* pointer;
-};
-
 class GLGraphicsDevice;
 
-class GLShader : public Shader {
-public:
-	GLuint glProgram;
-
-	~GLShader() override {
-		glDeleteProgram(glProgram);
-	}
-
-protected:
-	friend class GLGraphicsDevice;
-
-	GLShader(GLuint glProgram) : glProgram(glProgram) {
-	}
-};
+// ***** GLTexture *****
 
 class GLTexture : public Texture {
 public:
@@ -42,31 +21,31 @@ public:
 protected:
 	friend class GLGraphicsDevice;
 
-	GLTexture(uint width, uint height, PixelFormat format, FilterFlags flags, GLuint glTexture)
-		: Texture(width, height, format, flags), glTexture(glTexture) {
+	GLTexture(GraphicsDevice* device, uint width, uint height, PixelFormat format, FilterFlags flags, GLuint glTexture)
+		: Texture(device, width, height, format, flags), glTexture(glTexture) {
 	}
 };
 
-class GLFrameBuffer : public FrameBuffer {
-public:
-	GLuint glFramebuffer;
+// ***** GLUniformBuffer *****
 
-	~GLFrameBuffer() override {
-		glDeleteFramebuffers(1, &glFramebuffer);
-	}
+class GLUniformBuffer : public UniformBuffer {
+public:
+	GLuint glBuffer;
 
 protected:
 	friend class GLGraphicsDevice;
 
-	GLFrameBuffer(Texture* colorTexture, Texture* depthTexture, GLuint glFramebuffer)
-		: FrameBuffer(colorTexture, depthTexture), glFramebuffer(glFramebuffer) {
+	GLUniformBuffer(GraphicsDevice* device, uint size, GLuint glBuffer)
+		: UniformBuffer(device, size), glBuffer(glBuffer) {
 	}
 };
 
+// ***** GLVertexBuffer *****
+
 class GLVertexBuffer : public VertexBuffer {
 public:
+	GLuint const glVertexArray;
 	GLuint const glBuffer;
-	Vector<GLAttribPtr> const attribPtrs;
 
 	~GLVertexBuffer() override {
 		glDeleteBuffers(1, &glBuffer);
@@ -75,10 +54,12 @@ public:
 protected:
 	friend class GLGraphicsDevice;
 
-	GLVertexBuffer(uint length, VertexFormat format, GLuint glBuffer, Vector<GLAttribPtr> attribPtrs)
-		: VertexBuffer(length, std::move(format)), glBuffer(glBuffer), attribPtrs(std::move(attribPtrs)) {
+	GLVertexBuffer(GraphicsDevice* device, uint length, VertexFormat format, GLuint glVertexArray, GLuint glBuffer)
+		: VertexBuffer(device, length, std::move(format)), glVertexArray(glVertexArray), glBuffer(glBuffer) {
 	}
 };
+
+// ***** GLIndexBuffer *****
 
 class GLIndexBuffer : public IndexBuffer {
 public:
@@ -91,17 +72,133 @@ public:
 protected:
 	friend class GLGraphicsDevice;
 
-	GLIndexBuffer(uint length, IndexFormat format, GLuint glBuffer) : IndexBuffer(length, format), glBuffer(glBuffer) {
+	GLIndexBuffer(GraphicsDevice* device, uint length, IndexFormat format, GLuint glBuffer)
+		: IndexBuffer(device, length, format), glBuffer(glBuffer) {
 	}
 };
 
+// ***** GLFrameBuffer *****
+
+class GLFrameBuffer : public FrameBuffer {
+public:
+	GLuint glFramebuffer;
+
+	~GLFrameBuffer() override {
+		glDeleteFramebuffers(1, &glFramebuffer);
+	}
+
+protected:
+	friend class GLGraphicsDevice;
+
+	GLFrameBuffer(GraphicsDevice* device, Texture* colorTexture, Texture* depthTexture, GLuint glFramebuffer)
+		: FrameBuffer(device, colorTexture, depthTexture), glFramebuffer(glFramebuffer) {
+	}
+};
+
+// ***** GLShader *****
+
+class GLShader : public Shader {
+public:
+	GLuint const glProgram;
+	Vector<uint> const uniformBlocks;
+	Vector<GLUniform> const uniforms;
+	Vector<uint> const textures;
+
+	~GLShader() override {
+		glDeleteProgram(glProgram);
+	}
+
+protected:
+	friend class GLGraphicsDevice;
+
+	GLShader(GraphicsDevice* device, String source, GLuint glProgram, Vector<uint> uniformBlocks,
+			 Vector<GLUniform> uniforms, Vector<uint> textures)
+		: Shader(device, std::move(source)), glProgram(glProgram), uniformBlocks(std::move(uniformBlocks)),
+		  uniforms(std::move(uniforms)), textures(std::move(textures)) {
+	}
+};
+
+// ***** GLGraphicsContext *****
+
+class GLGraphicsContext : public GraphicsContext {
+public:
+	void setUniformBuffer(CString name, UniformBuffer* buffer) override;
+	void setTextureUniform(CString name, Texture* texture) override;
+	void setSimpleUniform(CString name, CAny any) override;
+
+	void setVertexBuffer(VertexBuffer* buffer) override;
+	void setIndexBuffer(IndexBuffer* buffer) override;
+	void setFrameBuffer(FrameBuffer* frameBuffer) override;
+
+	void setShader(Shader* shader) override;
+
+	void setViewport(CRecti viewport) override;
+	void setDepthMode(DepthMode mode) override;
+	void setBlendMode(BlendMode mode) override;
+	void setCullMode(CullMode mode) override;
+
+	void clear(CVec4f color) override;
+	void drawIndexedGeometry(uint order, uint firstVertex, uint numVertices, uint numInstances) override;
+	void drawGeometry(uint order, uint firstVertex, uint numVertices, uint numInstances) override;
+
+protected:
+	friend class GLGraphicsDevice;
+
+	explicit GLGraphicsContext(GraphicsDevice* device) : GraphicsContext(device) {
+	}
+
+private:
+	enum struct Dirty : bitmask {
+		// clang-format off
+		none = 					0x0000,
+		textures =      		0x0001,
+		vertexBuffer =			0x0002,
+		indexBuffer = 			0x0004,
+		frameBuffer = 			0x0008,
+		shader = 				0x0010,
+		viewport =				0x0020,
+		depthMode = 			0x0040,
+		blendMode = 			0x0080,
+		cullMode = 				0x0100,
+		uniformBufferBindings = 0x0200,
+		uniformBindings =		0x0400,
+		textureBindings = 		0x0800,
+		all = 					0x0fff,
+		bindings = uniformBufferBindings | uniformBindings | textureBindings,
+		// clang-format on
+	};
+
+	Dirty m_dirty = Dirty::all;
+
+	SharedPtr<GLTexture> m_textures[64]{};
+	SharedPtr<GLUniformBuffer> m_uniformBuffers[32]{};
+	Any m_uniforms[64]{};
+
+	SharedPtr<GLVertexBuffer> m_vertexBuffer;
+	SharedPtr<GLIndexBuffer> m_indexBuffer;
+	SharedPtr<GLFrameBuffer> m_frameBuffer;
+	SharedPtr<GLShader> m_shader;
+	DepthMode m_depthMode = DepthMode::disable;
+	BlendMode m_blendMode = BlendMode::disable;
+	CullMode m_cullMode = CullMode::disable;
+	Recti m_viewport{{0, 0}, {640, 480}};
+
+	void validate();
+};
+
+// ***** GCGraphicsDevice *****
+
 class GLGraphicsDevice : public GraphicsDevice {
 public:
-	Shader* createShader(CString source) override;
+	GLGraphicsDevice();
+
 	Texture* createTexture(uint width, uint height, PixelFormat format, FilterFlags flags, const void* data) override;
-	FrameBuffer* createFrameBuffer(Texture* colorTexture, Texture* depthTexture) override;
+	UniformBuffer* createUniformBuffer(uint size, const void* data) override;
 	VertexBuffer* createVertexBuffer(uint length, VertexFormat format, const void* data) override;
 	IndexBuffer* createIndexBuffer(uint length, IndexFormat format, const void* data) override;
+	FrameBuffer* createFrameBuffer(Texture* colorTexture, Texture* depthTexture) override;
+	Shader* createShader(CString source) override;
+	GraphicsContext* createGraphicsContext() override;
 
 	// OpenGL extensions
 	Texture* createGLTextureWrapper(uint width, uint height, PixelFormat format, FilterFlags flags, GLuint glTexture);

@@ -4,13 +4,16 @@
 
 #include <opengl/opengl.hh>
 
-//#define GLFW_EXPOSE_NATIVE_WIN32 1
-//#define GLFW_EXPOSE_NATIVE_WGL 1
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
+#include <glfw/glfw.hh>
 
+#ifdef OS_WINDOWS
 #define XR_USE_PLATFORM_WIN32 1
 #define XR_USE_GRAPHICS_API_OPENGL 1
+#else
+#define XR_USE_PLATFORM_XLIB 1
+#define XR_USE_GRAPHICS_API_OPENGL 1
+#endif
+
 #include <openxr/openxr_platform.h>
 
 #include <core/core.hh>
@@ -72,10 +75,34 @@ int main() {
 		debug() << "### Requirements min api version:" << XR_VERSION_MAJOR(requirements.minApiVersionSupported) << "."
 				<< XR_VERSION_MINOR(requirements.minApiVersionSupported);
 
+#ifdef OS_WINDOWS
 		XrGraphicsBindingOpenGLWin32KHR binding{XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR};
 		binding.hDC = GetDC(glfwGetWin32Window(window->glfwWindow()));
 		binding.hGLRC = glfwGetWGLContext(window->glfwWindow());
+#elif OS_LINUX
+		XrGraphicsBindingOpenGLXlibKHR binding{XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR};
+		binding.xDisplay = glfwGetX11Display();
+		binding.visualid = 0;		   // ?????
+		binding.glxFBConfig = nullptr; // ?????
+		binding.glxDrawable = glfwGetGLXWindow(window->glfwWindow());
+		binding.glxContext = glfwGetGLXContext(window->glfwWindow());
 
+		uint xid;
+		glXQueryDrawable(binding.xDisplay, binding.glxDrawable, GLX_FBCONFIG_ID, &xid);
+
+		int nconfigs;
+		auto fbconfigs = glXGetFBConfigs(binding.xDisplay, 0, &nconfigs);
+		for (uint i = 0; i < nconfigs; ++i) {
+			int id;
+			glXGetFBConfigAttrib(binding.xDisplay, fbconfigs[i], GLX_FBCONFIG_ID, &id);
+			if (id != xid) continue;
+			binding.glxFBConfig = fbconfigs[i];
+			break;
+		}
+
+		auto visual = glXGetVisualFromFBConfig(binding.xDisplay, binding.glxFBConfig);
+		binding.visualid = visual->visualid;
+#endif
 		XrSessionCreateInfo info{XR_TYPE_SESSION_CREATE_INFO};
 		info.next = &binding;
 		info.systemId = systemId;

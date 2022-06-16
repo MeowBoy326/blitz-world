@@ -1,6 +1,8 @@
 #pragma once
 
+#include "any.h"
 #include "appevent.h"
+#include "bitmask.h"
 #include "debug.h"
 #include "object.h"
 #include "property.h"

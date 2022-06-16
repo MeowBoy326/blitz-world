@@ -1,4 +1,4 @@
 #pragma once
 
-#include "stb/stb_image.h"
-#include "stb/stb_image_resize.h"
+#include "libstb/stb/stb_image.h"
+#include "libstb/stb/stb_image_resize.h"

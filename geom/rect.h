@@ -45,6 +45,22 @@ template <class T> struct Rect {
 		return Vec2(max.x - min.x, max.y - min.y);
 	}
 
+	float x() const {
+		return min.x;
+	}
+
+	float y() const {
+		return min.y;
+	}
+
+	T width() const {
+		return max.x - min.x;
+	}
+
+	T height() const {
+		return max.y - min.y;
+	}
+
 	bool contains(CVec2<T> v) const {
 		return v.x >= min.x && v.y >= min.y && v.z < max.z;
 	}

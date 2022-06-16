@@ -1,29 +1,28 @@
 
 cmake_minimum_required(VERSION 3.8)
 
+##### core3d module #####
+
 project(core3d)
 
 add_library(core3d
-	core3d.cpp
-	core3d.hh
-    formats.cpp
-    formats.h
-    framebuffer.cpp
-    framebuffer.h
-    glgraphicsdevice.cpp
-    glgraphicsdevice.h
-    glutils.cpp
-    glutils.h
-	graphicsdevice.cpp
-	graphicsdevice.h
-    indexbuffer.cpp
-    indexbuffer.h
-	shader.cpp
-	shader.h
-	texture.cpp
-	texture.h
-    vertexbuffer.cpp
-    vertexbuffer.h
-)
+        core3d.cpp
+        core3d.hh
+        types.cpp
+        types.h
+        glgraphicsdevice.cpp
+        glgraphicsdevice.h
+        gltypes.cpp
+        gltypes.h
+        graphicsdevice.cpp
+        graphicsdevice.h
+        )
 
-target_link_libraries(core3d geom stb core)
+target_link_libraries(core3d stb geom core)
+
+##### core3d tests #####
+
+add_executable(helloquad
+        tests/hellotriangle.cpp)
+
+target_link_libraries(helloquad core3d glwindow)

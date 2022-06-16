@@ -1,12 +1,443 @@
 #include "glgraphicsdevice.h"
 
-#include "glutils.h"
+#include "gltypes.h"
+
+#include <glfw/glfw.hh>
 
 namespace wb {
 
-Shader* GLGraphicsDevice::createShader(CString source) {
+namespace {
 
-	verify(!glGetError());
+struct IdMap {
+
+	uint next = 0;
+	StringMap<uint> map;
+
+	uint get(CString name) {
+		auto it = map.find(name);
+		if (it != map.end()) return it->second;
+		map.insert(it, std::make_pair(name, ++next));
+		return next;
+	}
+};
+
+IdMap uniformBufferIds;
+IdMap uniformIds;
+IdMap textureIds;
+
+GLuint glNullVertexArray;
+
+} // namespace
+
+// ***** GLGraphicsContext *****
+
+void GLGraphicsContext::setUniformBuffer(CString name, UniformBuffer* uniformBuffer) {
+	uint id = uniformBufferIds.get(name);
+	if (uniformBuffer == m_uniformBuffers[id]) return;
+	m_uniformBuffers[id] = static_cast<GLUniformBuffer*>(uniformBuffer);
+	m_dirty |= Dirty::uniformBufferBindings;
+}
+
+void GLGraphicsContext::setTextureUniform(CString name, Texture* texture) {
+	uint id = textureIds.get(name);
+	if (texture == m_textures[id]) return;
+	m_textures[id] = static_cast<GLTexture*>(texture);
+	m_dirty |= Dirty::textureBindings;
+}
+
+void GLGraphicsContext::setSimpleUniform(CString name, CAny any) {
+	uint id = uniformIds.get(name);
+	if (m_uniforms[id] == any) return;
+	m_uniforms[id] = any;
+	m_dirty |= Dirty::uniformBindings;
+}
+
+void GLGraphicsContext::setVertexBuffer(VertexBuffer* vertexBuffer) {
+	if (vertexBuffer == m_vertexBuffer) return;
+	m_vertexBuffer = static_cast<GLVertexBuffer*>(vertexBuffer);
+	m_dirty |= Dirty::vertexBuffer;
+}
+
+void GLGraphicsContext::setIndexBuffer(IndexBuffer* indexBuffer) {
+	if (indexBuffer == m_indexBuffer) return;
+	m_indexBuffer = static_cast<GLIndexBuffer*>(indexBuffer);
+	m_dirty |= Dirty::indexBuffer;
+}
+
+void GLGraphicsContext::setFrameBuffer(FrameBuffer* frameBuffer) {
+	if (frameBuffer == m_frameBuffer) return;
+	m_frameBuffer = static_cast<GLFrameBuffer*>(frameBuffer);
+	m_dirty |= Dirty::frameBuffer;
+}
+
+void GLGraphicsContext::setShader(Shader* shader) {
+	if (shader == m_shader) return;
+	m_shader = static_cast<GLShader*>(shader);
+	m_dirty |= Dirty::shader;
+}
+
+void GLGraphicsContext::setDepthMode(DepthMode mode) {
+	if (mode == m_depthMode) return;
+	m_depthMode = mode;
+	m_dirty |= Dirty::depthMode;
+}
+
+void GLGraphicsContext::setBlendMode(BlendMode mode) {
+	if (mode == m_blendMode) return;
+	m_blendMode = mode;
+	m_dirty |= Dirty::blendMode;
+}
+
+void GLGraphicsContext::setCullMode(CullMode mode) {
+	if (mode == m_cullMode) return;
+	m_cullMode = mode;
+	m_dirty |= Dirty::cullMode;
+}
+
+void GLGraphicsContext::setViewport(CRecti viewport) {
+	if (viewport == m_viewport) return;
+	m_viewport = viewport;
+	m_dirty |= Dirty::viewport;
+}
+
+void GLGraphicsContext::validate() {
+	glAssert();
+
+	if (bool(m_dirty & Dirty::frameBuffer)) {
+		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer ? m_frameBuffer->glFramebuffer : 0);
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::viewport)) {
+		glViewport(m_viewport.x(), m_viewport.y(), m_viewport.width(), m_viewport.height());
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::vertexBuffer)) {
+		glBindVertexArray(m_vertexBuffer ? m_vertexBuffer->glVertexArray : glNullVertexArray);
+		m_dirty |= Dirty::indexBuffer;
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::indexBuffer)) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer ? m_indexBuffer->glBuffer : 0);
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::shader)) {
+		glUseProgram(m_shader->glProgram);
+		m_dirty |= Dirty::bindings;
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::uniformBufferBindings)) {
+		for (uint id : m_shader->uniformBlocks) {
+			auto buffer = m_uniformBuffers[id].value();
+			assert(buffer);
+			glBindBufferBase(GL_UNIFORM_BUFFER, id, buffer->glBuffer);
+		}
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::textureBindings)) {
+		GLint texUnit = GL_TEXTURE0;
+		for (uint id : m_shader->textures) {
+			auto texture = m_textures[id].value();
+			assert(texture);
+			glBindTexture(GL_TEXTURE_2D, texture->glTexture);
+			glActiveTexture(texUnit++);
+		}
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::uniformBindings)) {
+		for (auto& uniform : m_shader->uniforms) {
+			assert(m_uniforms[uniform.id].exists());
+			bindGLUniform(uniform.glType, uniform.glLocation, m_uniforms[uniform.id]);
+		}
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::depthMode)) {
+		switch (m_depthMode) {
+		case DepthMode::disable:
+			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+			break;
+		case DepthMode::enable:
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LEQUAL);
+			glDepthMask(GL_TRUE);
+			break;
+		case DepthMode::compare:
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LEQUAL);
+			glDepthMask(GL_FALSE);
+			break;
+		}
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::blendMode)) {
+		switch (m_blendMode) {
+		case BlendMode::disable:
+			glDisable(GL_BLEND);
+			break;
+		case BlendMode::alpha:
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			break;
+		case BlendMode::additive:
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE); //_MINUS_SRC_ALPHA);
+			break;
+		case BlendMode::multiply:
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
+			break;
+		}
+		glAssert();
+	}
+
+	if (bool(m_dirty & Dirty::cullMode)) {
+		switch (m_cullMode) {
+		case CullMode::disable:
+			glDisable(GL_CULL_FACE);
+			break;
+		case CullMode::front:
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			break;
+		case CullMode::back:
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_FRONT);
+			break;
+		case CullMode::all:
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_FRONT_AND_BACK);
+			break;
+		}
+		glAssert();
+	}
+
+	m_dirty = Dirty::none;
+}
+
+void GLGraphicsContext::clear(CVec4f color) {
+	glAssert();
+
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(m_viewport.x(), m_viewport.y(), m_viewport.width(), m_viewport.height());
+
+	glClearColor(color.x, color.y, color.z, color.w);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glDisable(GL_SCISSOR_TEST);
+
+	glAssert();
+}
+
+void GLGraphicsContext::drawIndexedGeometry(uint order, uint firstVertex, uint numVertices, uint numInstances) {
+	static constexpr GLenum modes[] = {GL_NONE, GL_POINTS, GL_LINES, GL_TRIANGLES};
+	static constexpr GLenum types[] = {GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT};
+	static constexpr uint size[] = {1, 2, 4};
+
+	assert(order > 0 && order < 4);
+
+	auto type = types[int(m_indexBuffer->format)];
+	auto ptr = reinterpret_cast<void*>(bytesPerIndex(m_indexBuffer->format) * firstVertex);
+
+	validate();
+
+	if (numInstances > 1) {
+		glDrawElementsInstanced(modes[order], int(numVertices), type, ptr, int(numInstances));
+	} else {
+		glDrawElements(modes[order], int(numVertices), type, ptr);
+	}
+
+	glAssert();
+}
+
+void GLGraphicsContext::drawGeometry(uint order, uint firstVertex, uint numVertices, uint numInstances) {
+	static constexpr GLenum modes[] = {GL_NONE, GL_POINTS, GL_LINES, GL_TRIANGLES};
+
+	assert(order > 0 && order < 4);
+
+	validate();
+
+	if (numInstances > 1) {
+		glDrawArraysInstanced(modes[order], int(firstVertex), int(numVertices), int(numInstances));
+	} else {
+		glDrawArrays(modes[order], int(firstVertex), int(numVertices));
+	}
+
+	glAssert();
+}
+
+// ***** GLGraphicsDevice *****
+
+GLGraphicsDevice::GLGraphicsDevice() {
+	glGenVertexArrays(1, &glNullVertexArray);
+	glBindVertexArray(glNullVertexArray);
+	glBindVertexArray(0);
+}
+
+Texture* GLGraphicsDevice::createTexture(uint width, uint height, PixelFormat format, FilterFlags flags,
+										 const void* data) {
+
+	glAssert();
+
+	GLenum glTarget = GL_TEXTURE_2D;
+
+	GLuint glTexture;
+	glGenTextures(1, &glTexture);
+	glBindTexture(glTarget, glTexture);
+
+	float aniso = 0.0f;
+	if (glfwExtensionSupported("GL_EXT_texture_filter_anisotropic")) {
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso);
+	}
+	//	if (GLEW_EXT_texture_filter_anisotropic) { glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso); }
+
+	if ((flags & FilterFlags::mipmap) == FilterFlags::mipmap) {
+		glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		if (aniso != 0) glTexParameterf(glTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
+	} else if ((flags & FilterFlags::linear) == FilterFlags::linear) {
+		glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	} else {
+		glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	}
+	if ((flags & FilterFlags::clampS) == FilterFlags::clampS) {
+		glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	} else {
+		glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	}
+	if ((flags & FilterFlags::clampT) == FilterFlags::clampT) {
+		glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	} else {
+		glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	}
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	setGLTextureData(width, height, format, flags, data);
+
+	glBindTexture(glTarget, 0);
+
+	glAssert();
+
+	return new GLTexture(this, width, height, format, flags, glTexture);
+}
+
+UniformBuffer* GLGraphicsDevice::createUniformBuffer(uint size, const void* data) {
+
+	glAssert();
+
+	GLuint glBuffer;
+	glGenBuffers(1, &glBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, glBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, size, data, data ? GL_STATIC_DRAW : GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glAssert();
+
+	return new GLUniformBuffer(this, size, glBuffer);
+}
+
+VertexBuffer* GLGraphicsDevice::createVertexBuffer(uint length, VertexFormat format, const void* data) {
+
+	glAssert();
+
+	GLenum glAttribTypes[] = {GL_NONE,	GL_FLOAT, GL_FLOAT,			GL_FLOAT,
+							  GL_FLOAT, GL_BYTE,  GL_UNSIGNED_BYTE, GL_UNSIGNED_BYTE};
+
+	uint stride = bytesPerVertex(format);
+
+	GLuint glVertexArray;
+	glGenVertexArrays(1, &glVertexArray);
+	glBindVertexArray(glVertexArray);
+
+	GLuint glBuffer;
+	glGenBuffers(1, &glBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, glBuffer);
+	glBufferData(GL_ARRAY_BUFFER, length * stride, data, data ? GL_STATIC_DRAW : GL_STREAM_DRAW);
+
+	int index = 0;
+	const char* ptr = nullptr;
+	for (auto attrib : format) {
+		auto size = channelsPerAttrib(attrib);
+		auto type = glAttribTypes[int(attrib)];
+
+		glEnableVertexAttribArray(index);
+		glVertexAttribPointer(index, int(size), type, false, int(stride), ptr);
+
+		ptr += bytesPerAttrib(attrib);
+		++index;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	glAssert();
+
+	return new GLVertexBuffer(this, length, format, glVertexArray, glBuffer);
+}
+
+IndexBuffer* GLGraphicsDevice::createIndexBuffer(uint length, IndexFormat format, const void* data) {
+
+	glAssert();
+
+	GLuint glBuffer;
+	glGenBuffers(1, &glBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * bytesPerIndex(format), data, data ? GL_STATIC_DRAW : GL_STREAM_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glAssert();
+
+	return new GLIndexBuffer(this, length, format, glBuffer);
+}
+
+FrameBuffer* GLGraphicsDevice::createFrameBuffer(Texture* colorTexture, Texture* depthTexture) {
+
+	glAssert();
+
+	auto glColorTexture = static_cast<GLTexture*>(colorTexture);
+	auto glDepthTexture = static_cast<GLTexture*>(depthTexture);
+
+	GLuint glFramebuffer;
+	glGenFramebuffers(1, &glFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, glFramebuffer);
+	if (glColorTexture) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glColorTexture->glTexture, 0);
+	}
+	if (glDepthTexture) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glDepthTexture->glTexture, 0);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glAssert();
+
+	return new GLFrameBuffer(this, colorTexture, depthTexture, glFramebuffer);
+}
+
+Shader* GLGraphicsDevice::createShader(CString shaderSrc) {
+
+	glAssert();
+
+	String header;
+#ifdef OS_EMSCRIPTEN
+	header = "#version 300 es\n";
+#else
+	header = "#version 450\n";
+#endif
+	header += "precision mediump float;\n";
+	header += "precision highp int;\n";
+
+	String source = header + shaderSrc;
 
 	auto createShader = [](GLenum type, const char* source) -> GLuint {
 		while (*source && *source <= ' ') ++source;
@@ -74,127 +505,67 @@ Shader* GLGraphicsDevice::createShader(CString source) {
 		panic("OOPS");
 	}
 
-	verify(!glGetError());
+	glUseProgram(program);
 
-	return new GLShader(program);
+	int n;
+	glGetProgramiv(program, GL_ACTIVE_UNIFORM_BLOCKS, &n);
+	Vector<uint> uniformBlocks;
+	for (int i = 0; i < n; ++i) {
+
+		char name[256] = "";
+		glGetActiveUniformBlockName(program, i, sizeof(name), nullptr, name);
+		GLuint glIndex = glGetUniformBlockIndex(program, name);
+		uint id = uniformBufferIds.get(name);
+
+		glUniformBlockBinding(program, glIndex, id);
+		uniformBlocks.push_back(id);
+	}
+
+	glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &n);
+	Vector<GLUniform> uniforms;
+	Vector<uint> textures;
+	for (int i = 0; i < n; ++i) {
+
+		int blk = 0;
+		glGetActiveUniformsiv(program, 1, (GLuint*)&i, GL_UNIFORM_BLOCK_INDEX, &blk);
+		if (blk != -1) continue;
+
+		GLint glSize = 0;
+		GLenum glType = 0;
+		char name[256] = {};
+		glGetActiveUniform(program, i, sizeof(name), nullptr, &glSize, &glType, name);
+		GLint glLocation = glGetUniformLocation(program, name);
+
+		switch (glType) {
+		case GL_FLOAT:
+		case GL_FLOAT_VEC2:
+		case GL_FLOAT_VEC3:
+		case GL_FLOAT_VEC4:
+			uniforms.push_back(GLUniform{name, uniformIds.get(name), glSize, glType, glLocation});
+			break;
+		case GL_SAMPLER_2D:
+		case GL_SAMPLER_3D:
+		case GL_SAMPLER_CUBE:
+			glUniform1i(glLocation, GLint(textures.size()));
+			textures.push_back(textureIds.get(name));
+			break;
+		default:
+			panic("OOPS");
+		}
+	}
+
+	glUseProgram(0);
+
+	glAssert();
+
+	return new GLShader(this, source, program, uniformBlocks, uniforms, textures);
 }
 
-Texture* GLGraphicsDevice::createTexture(uint width, uint height, PixelFormat format, FilterFlags flags,
-										 const void* data) {
+GraphicsContext* GLGraphicsDevice::createGraphicsContext() {
 
-	verify(!glGetError());
+	glAssert();
 
-	GLenum glTarget = GL_TEXTURE_2D;
-
-	GLuint glTexture;
-	glGenTextures(1, &glTexture);
-	glBindTexture(glTarget, glTexture);
-
-	float aniso = 0.0f;
-	if (GLEW_EXT_texture_filter_anisotropic) { glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &aniso); }
-
-	if ((flags & FilterFlags::mipmap) == FilterFlags::mipmap) {
-		glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		if (aniso) glTexParameterf(glTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
-	} else if ((flags & FilterFlags::linear) == FilterFlags::linear) {
-		glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	} else {
-		glTexParameteri(glTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(glTarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	}
-	if ((flags & FilterFlags::clampS) == FilterFlags::clampS) {
-		glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	} else {
-		glTexParameteri(glTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	}
-	if ((flags & FilterFlags::clampT) == FilterFlags::clampT) {
-		glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	} else {
-		glTexParameteri(glTarget, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	}
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	setGLTextureData(width, height, format, flags, data);
-
-	glBindTexture(glTarget, 0);
-
-	verify(!glGetError());
-
-	return new GLTexture(width, height, format, flags, glTexture);
-}
-
-FrameBuffer* GLGraphicsDevice::createFrameBuffer(Texture* colorTexture, Texture* depthTexture) {
-
-	verify(!glGetError());
-
-	auto glColorTexture = static_cast<GLTexture*>(colorTexture);
-	auto glDepthTexture = static_cast<GLTexture*>(depthTexture);
-
-	GLuint glFramebuffer;
-	glGenFramebuffers(1, &glFramebuffer);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, glFramebuffer);
-
-	if (glColorTexture) {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, glColorTexture->glTexture, 0);
-	}
-	if (glDepthTexture) {
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, glDepthTexture->glTexture, 0);
-	}
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	verify(!glGetError());
-
-	return new GLFrameBuffer(colorTexture, depthTexture, glFramebuffer);
-}
-
-VertexBuffer* GLGraphicsDevice::createVertexBuffer(uint length, VertexFormat format, const void* data) {
-
-	verify(!glGetError());
-
-	GLenum glAttribTypes[] = {GL_NONE,	GL_FLOAT, GL_FLOAT,			GL_FLOAT,
-							  GL_FLOAT, GL_BYTE,  GL_UNSIGNED_BYTE, GL_UNSIGNED_BYTE};
-
-	Vector<GLAttribPtr> attribPtrs;
-	uint stride = bytesPerVertex(format);
-	char* pointer = 0;
-	for (auto attrib : format) {
-		auto size = channelsPerAttrib(attrib);
-		auto type = glAttribTypes[int(attrib)];
-		attribPtrs.push_back(GLAttribPtr{(GLint)size, type, false, (GLsizei)stride, pointer});
-		pointer += bytesPerAttrib(attrib);
-	}
-
-	GLuint glBuffer;
-	glGenBuffers(1, &glBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, glBuffer);
-	glBufferData(GL_ARRAY_BUFFER, length * stride, data,  data ? GL_STATIC_DRAW : GL_STREAM_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	verify(!glGetError());
-
-	return new GLVertexBuffer(length, std::move(format), glBuffer, std::move(attribPtrs));
-}
-
-IndexBuffer* GLGraphicsDevice::createIndexBuffer(uint length, IndexFormat format, const void* data) {
-
-	verify(!glGetError());
-
-	size_t bpi = (format == IndexFormat::uint32 ? 4 : 2);
-
-	GLuint glBuffer;
-	glGenBuffers(1, &glBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, length * bytesPerIndex(format), data, data ? GL_STATIC_DRAW : GL_STREAM_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	verify(!glGetError());
-
-	return new GLIndexBuffer(length,format,glBuffer);
+	return new GLGraphicsContext(this);
 }
 
 } // namespace wb
